@@ -115,44 +115,44 @@ The search term:`,
     }
 
     if (sources.length > 0) {
-        // render footnotes with response
-    let textCursor = 0;
-    const finalResponseContainer = document.createElement('div');
-    const sortedFullTextGroundings = fullTextGroundings.sort((a, b) => {
-      if (a.endIndex < b.endIndex) {
-        return -1;
+      // render footnotes with response
+      let textCursor = 0;
+      const finalResponseContainer = document.createElement('div');
+      const sortedFullTextGroundings = fullTextGroundings.sort((a, b) => {
+        if (a.endIndex < b.endIndex) {
+          return -1;
+        }
+
+        return 1;
+      });
+
+      for (const grounding of sortedFullTextGroundings) {
+        // advance cursor when grounding proceeds rendered text
+        if (textCursor < grounding.endIndex) {
+          const responseNode = document.createElement('span');
+          responseNode.textContent = fullTextRaw.slice(textCursor, grounding.endIndex);
+          textCursor = grounding.endIndex + 1;
+          finalResponseContainer.appendChild(responseNode);
+        }
+
+        // add footnote
+        grounding.sourceIndices.sort().forEach((idx, _) => {
+
+          const footnote = document.createElement('a');
+          footnote.textContent = `[${idx + 1}]`;
+          footnote.href = `#footnote-${idx + 1}`;
+          footnote.className = 'footnote-link';
+          finalResponseContainer.appendChild(footnote);
+        });
       }
 
-      return 1;
-    });
-
-    for (const grounding of sortedFullTextGroundings) {
-      // advance cursor when grounding proceeds rendered text
-      if (textCursor < grounding.endIndex) {
+      // advance cursor if we have not yet exhausted it
+      if (textCursor < fullTextRaw.length) {
         const responseNode = document.createElement('span');
-        responseNode.textContent = fullTextRaw.slice(textCursor, grounding.endIndex);
-        textCursor = grounding.endIndex + 1;
+        responseNode.textContent = fullTextRaw.slice(textCursor, fullTextRaw.length);
+        textCursor = fullTextRaw.length + 1;
         finalResponseContainer.appendChild(responseNode);
       }
-
-      // add footnote
-      grounding.sourceIndices.forEach((idx, _) => {
-
-        const footnote = document.createElement('a');
-        footnote.textContent = `[${idx + 1}]`;
-        footnote.href = `#footnote-${idx + 1}`;
-        footnote.className = 'footnote-link';
-        finalResponseContainer.appendChild(footnote);
-      });
-    }
-
-    // advance cursor if we have not yet exhausted it
-    if (textCursor < fullTextRaw.length) {
-      const responseNode = document.createElement('span');
-      responseNode.textContent = fullTextRaw.slice(textCursor, fullTextRaw.length);
-      textCursor = fullTextRaw.length + 1;
-      finalResponseContainer.appendChild(responseNode);
-    }
 
       let sourcesHtml = '<h2>Sources</h2><ol>';
       sources.forEach((source, index) => {
