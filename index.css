@@ -1,0 +1,88 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  background-color: #f4f4f9;
+  color: #333;
+  margin: 0;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+}
+
+main {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  width: 100%;
+}
+
+#response-container {
+  margin-bottom: 2rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.footnote-link {
+  font-size: 0.8em;
+  vertical-align: super;
+  text-decoration: none;
+  color: #0056b3;
+  margin: 0 0.1em;
+}
+
+.footnote-link:hover {
+  text-decoration: underline;
+}
+
+#sources-container h2 {
+  font-size: 1.2rem;
+  color: #555;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+#sources-container ol {
+  list-style-type: decimal;
+  padding: 0;
+  margin: 0;
+  padding-left: 2em;
+}
+
+#sources-container li {
+  margin-bottom: 1rem;
+}
+
+#sources-container a {
+  color: #0056b3;
+  text-decoration: none;
+  font-weight: 500;
+  display: block;
+  transition: background-color 0.2s ease-in-out;
+  padding: 0.5rem;
+  border-radius: 4px;
+}
+
+#sources-container a:hover {
+  background-color: #f0f0f0;
+  text-decoration: underline;
+}
+
+#sources-container .title {
+  display: block;
+  white-space: normal;
+}
+
+#sources-container .uri {
+  font-size: 0.8rem;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  margin-top: 0.25rem;
+}
