@@ -129,9 +129,31 @@ The search term:`,
 
         // grounding supports
         const groundingSupports = chunk.candidates?.[0]?.groundingMetadata?.groundingSupports;
+        let previousIndices = new Set<number>();
         if (groundingSupports) {
           for (const { groundingChunkIndices, segment: { startIndex, endIndex } } of groundingSupports) {
             if (groundingChunkIndices && startIndex && endIndex) {
+
+              // dedupe footnote references that repeat the same set of grounding
+              // sources in sequence
+              // HOWEVER: this is not quite right still, we should dedupe the duplicates that
+              // come earliest and leave the references that best summarize an entire contiguous
+              // block at the end of the statement
+              const indices = new Set<number>(groundingChunkIndices);
+              let isDuplicateSources = indices.size == previousIndices.size;
+              for (const index of indices) {
+                if (!previousIndices.delete(index)) {
+                  isDuplicateSources = false;
+                }
+              }
+
+              previousIndices = indices;
+
+              if (isDuplicateSources) {
+                console.log('deduped', indices, startIndex, endIndex);
+                continue;
+              }
+
               fullTextGroundings.push({
                 startIndex,
                 endIndex,
