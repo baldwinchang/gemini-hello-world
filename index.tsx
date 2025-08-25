@@ -6,16 +6,44 @@ import { renderLineBreaks, renderLine } from './parser.tsx';
 
 const RENDER_RICH_AND_PLAIN = false;
 
-async function main(prompt: string) {
+async function main(prompt: string, requestId: number) {
   const responseContainer = document.getElementById('response-container');
   const sourcesContainer = document.getElementById('sources-container');
+  const historyContainer = document.getElementById('history-container');
 
-  if (!responseContainer || !sourcesContainer) {
+  if (!responseContainer || !sourcesContainer || !historyContainer) {
     console.error('Required DOM elements not found.');
     return;
   }
 
-  responseContainer.textContent = 'Thinking...';
+  // archive prior
+  if (responseContainer && historyContainer && sourcesContainer) {
+    const entryElement = document.createElement('div');
+    entryElement.className = 'entry';
+
+    const pastResponseNode = responseContainer.cloneNode(true) as HTMLElement;
+    pastResponseNode.id = '';
+    entryElement.appendChild(pastResponseNode);
+
+    const pastSourcesNode = sourcesContainer.cloneNode(true) as HTMLElement;
+    pastSourcesNode.id = '';
+    entryElement.appendChild(pastSourcesNode);
+
+    historyContainer.prepend(entryElement);
+
+    responseContainer.replaceWith(document.getElementById('response-container'));
+    responseContainer.innerHTML = '';
+  }
+
+
+  const queryTitle = document.createElement('h2');
+  queryTitle.textContent = prompt;
+  responseContainer.prepend(queryTitle);
+
+  const thinkingQuerySuspender = document.createElement('span');
+  thinkingQuerySuspender.textContent = 'Thinking...';
+
+  responseContainer.appendChild(thinkingQuerySuspender);
   sourcesContainer.innerHTML = '';
 
   try {
@@ -57,7 +85,7 @@ The search term:`,
       contents,
     });
 
-    let isFirstChunk = true;
+    let firstChunk = true;
     let fullTextRaw = '';
     const sources: { uri: string; title?: string }[] = [];
     const sourceUrisLinkedReferences = new Map<string, number>();
@@ -66,15 +94,19 @@ The search term:`,
 
     // parse response
     for await (const chunk of responseStream) {
-      if (isFirstChunk) {
-        responseContainer.textContent = '';
-        isFirstChunk = false;
+      const chunkText = chunk.text;
+
+      const chunkTextElement = document.createElement('span');
+      responseContainer.appendChild(chunkTextElement);
+
+      if (firstChunk) {
+        firstChunk = false;
+        thinkingQuerySuspender.remove();
       }
 
-      const chunkText = chunk.text;
       if (chunkText) {
         fullTextRaw += chunkText;
-        responseContainer.textContent += chunkText;
+        chunkTextElement.textContent += chunkText;
       }
 
       const groundingChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks;
@@ -133,7 +165,7 @@ The search term:`,
           grounding.sourceIndices.sort().forEach((idx, _) => {
             const footnote = document.createElement('a');
             footnote.textContent = `[${idx + 1}]`;
-            footnote.href = `#footnote-${idx + 1}`;
+            footnote.href = `#footnote-request_${requestId}-${idx + 1}`;
             footnote.className = 'footnote-link';
             footnotes.appendChild(footnote);
           });
@@ -145,8 +177,8 @@ The search term:`,
           const segment = fullTextRaw.slice(textCursor, grounding.endIndex);
           textCursor = grounding.endIndex;
           finalResponseContainer.appendChild(renderLineBreaks(segment));
-        } 
-        
+        }
+
         finalResponseContainer.appendChild(footnotesFn());
       }
 
@@ -161,7 +193,7 @@ The search term:`,
         const title = source.title || 'Untitled';
         const uri = source.uri;
         sourcesHtml += `
-          <li id="footnote-${index + 1}">
+          <li id="footnote-request_${requestId}-${index + 1}">
             <a href="${uri}" target="_blank" rel="noopener noreferrer" title="${title}">
               <span class="title">${title}</span>
               <span class="uri">${uri}</span>
@@ -179,11 +211,16 @@ The search term:`,
         finalResponseContainer.appendChild(renderLine(fullTextRaw));
       }
 
+
+      const queryTitle = document.createElement('h2');
+      queryTitle.textContent = prompt;
+      finalResponseContainer.prepend(queryTitle);
+
       responseContainer.replaceWith(finalResponseContainer);
       sourcesContainer.innerHTML = sourcesHtml;
     }
 
-    
+
 
   } catch (error) {
     console.error('API Error:', error);
@@ -197,6 +234,8 @@ function initializeApp() {
   const searchForm = document.getElementById('search-form') as HTMLFormElement;
   const searchInput = document.getElementById('search-input') as HTMLInputElement;
   const searchButton = document.getElementById('search-button') as HTMLButtonElement;
+
+  let requestId = 0;
 
   if (!searchForm || !searchInput || !searchButton) {
     console.error('Required DOM elements for search not found.');
@@ -219,7 +258,8 @@ function initializeApp() {
     const generationDate = new Date();
 
     try {
-      await main(prompt);
+      requestId += 1;
+      await main(prompt, requestId);
 
       const endTime = performance.now();
       const durationSeconds = ((endTime - startTime) / 1000).toFixed(2);
@@ -227,11 +267,13 @@ function initializeApp() {
       const metadataElement = document.createElement('p');
       metadataElement.className = 'response-metadata';
       metadataElement.textContent = `Generated on ${generationDate.toLocaleString()} in ${durationSeconds} seconds.`;
-      
+
       const responseContainer = document.getElementById('response-container');
       if (responseContainer) {
         responseContainer.appendChild(metadataElement);
       }
+
+      searchInput.value = '';
 
     } catch (error) {
       // The main function already handles displaying an error message.
@@ -242,8 +284,11 @@ function initializeApp() {
       searchInput.disabled = false;
       searchButton.disabled = false;
       searchButton.textContent = 'Search';
+
+      searchInput.focus();
     }
   });
+  searchInput.focus();
 }
 
 initializeApp();
