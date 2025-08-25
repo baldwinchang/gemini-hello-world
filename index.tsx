@@ -148,8 +148,6 @@ The search term:`,
         } 
         
         finalResponseContainer.appendChild(footnotesFn());
-        
-
       }
 
       // advance cursor if we have not yet exhausted it
@@ -217,8 +215,24 @@ function initializeApp() {
     searchButton.disabled = true;
     searchButton.textContent = 'Searching...';
 
+    const startTime = performance.now();
+    const generationDate = new Date();
+
     try {
       await main(prompt);
+
+      const endTime = performance.now();
+      const durationSeconds = ((endTime - startTime) / 1000).toFixed(2);
+
+      const metadataElement = document.createElement('p');
+      metadataElement.className = 'response-metadata';
+      metadataElement.textContent = `Generated on ${generationDate.toLocaleString()} in ${durationSeconds} seconds.`;
+      
+      const responseContainer = document.getElementById('response-container');
+      if (responseContainer) {
+        responseContainer.appendChild(metadataElement);
+      }
+
     } catch (error) {
       // The main function already handles displaying an error message.
       // We just log it here for debugging.

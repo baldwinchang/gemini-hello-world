@@ -131,3 +131,11 @@ h2 {
   display: block;
   margin-top: 0.25rem;
 }
+
+.response-metadata {
+  font-style: italic;
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 1.5rem;
+  padding-top: 0.5rem;
+}
