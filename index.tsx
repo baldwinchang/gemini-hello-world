@@ -2,6 +2,10 @@ import {
   GoogleGenAI,
 } from '@google/genai';
 
+import { renderLineBreaks, renderLine } from './parser.tsx';
+
+const RENDER_RICH_AND_PLAIN = false;
+
 async function main(prompt: string) {
   const responseContainer = document.getElementById('response-container');
   const sourcesContainer = document.getElementById('sources-container');
@@ -56,7 +60,6 @@ The search term:`,
     let isFirstChunk = true;
     let fullTextRaw = '';
     const sources: { uri: string; title?: string }[] = [];
-    // const seenSourceUris = new Set<string>();
     const sourceUrisLinkedReferences = new Map<string, number>();
     const sourcesReference: number[] = [];
     const fullTextGroundings: { startIndex: number, endIndex: number, sourceIndices: number[] }[] = [];
@@ -71,10 +74,6 @@ The search term:`,
       const chunkText = chunk.text;
       if (chunkText) {
         fullTextRaw += chunkText;
-        // const chunkNode = document.createElement('div');
-        // chunkNode.textContent = chunkText;
-        // fullTextNode.appendChild(chunkNode);
-        // responseContainer.replaceWith(fullTextNode);
         responseContainer.textContent += chunkText;
       }
 
@@ -118,6 +117,7 @@ The search term:`,
       // render footnotes with response
       let textCursor = 0;
       const finalResponseContainer = document.createElement('div');
+      finalResponseContainer.id = 'response-container';
       const sortedFullTextGroundings = fullTextGroundings.sort((a, b) => {
         if (a.endIndex < b.endIndex) {
           return -1;
@@ -128,30 +128,34 @@ The search term:`,
 
       for (const grounding of sortedFullTextGroundings) {
         // advance cursor when grounding proceeds rendered text
+        const footnotesFn = () => {
+          const footnotes = document.createElement('span');
+          grounding.sourceIndices.sort().forEach((idx, _) => {
+            const footnote = document.createElement('a');
+            footnote.textContent = `[${idx + 1}]`;
+            footnote.href = `#footnote-${idx + 1}`;
+            footnote.className = 'footnote-link';
+            footnotes.appendChild(footnote);
+          });
+          return footnotes;
+        };
+
+
         if (textCursor < grounding.endIndex) {
-          const responseNode = document.createElement('span');
-          responseNode.textContent = fullTextRaw.slice(textCursor, grounding.endIndex);
-          textCursor = grounding.endIndex + 1;
-          finalResponseContainer.appendChild(responseNode);
-        }
+          const segment = fullTextRaw.slice(textCursor, grounding.endIndex);
+          textCursor = grounding.endIndex;
+          finalResponseContainer.appendChild(renderLineBreaks(segment));
+        } 
+        
+        finalResponseContainer.appendChild(footnotesFn());
+        
 
-        // add footnote
-        grounding.sourceIndices.sort().forEach((idx, _) => {
-
-          const footnote = document.createElement('a');
-          footnote.textContent = `[${idx + 1}]`;
-          footnote.href = `#footnote-${idx + 1}`;
-          footnote.className = 'footnote-link';
-          finalResponseContainer.appendChild(footnote);
-        });
       }
 
       // advance cursor if we have not yet exhausted it
       if (textCursor < fullTextRaw.length) {
-        const responseNode = document.createElement('span');
-        responseNode.textContent = fullTextRaw.slice(textCursor, fullTextRaw.length);
-        textCursor = fullTextRaw.length + 1;
-        finalResponseContainer.appendChild(responseNode);
+        finalResponseContainer.appendChild(renderLineBreaks(fullTextRaw.slice(textCursor, fullTextRaw.length)));
+        textCursor = fullTextRaw.length;
       }
 
       let sourcesHtml = '<h2>Sources</h2><ol>';
@@ -168,9 +172,20 @@ The search term:`,
         `;
       });
       sourcesHtml += '</ol>';
+
+
+      if (RENDER_RICH_AND_PLAIN) {
+        const plainResponseHeader: HTMLElement = document.createElement('h2');
+        plainResponseHeader.textContent = 'Plain Response (DEBUG)';
+        finalResponseContainer.appendChild(plainResponseHeader);
+        finalResponseContainer.appendChild(renderLine(fullTextRaw));
+      }
+
       responseContainer.replaceWith(finalResponseContainer);
       sourcesContainer.innerHTML = sourcesHtml;
     }
+
+    
 
   } catch (error) {
     console.error('API Error:', error);

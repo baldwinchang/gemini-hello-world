@@ -31,14 +31,14 @@ main {
   vertical-align: super;
   text-decoration: none;
   color: #0056b3;
-  margin: 0 0.1em;
+  /* margin: 0 0.1em; */
 }
 
 .footnote-link:hover {
   text-decoration: underline;
 }
 
-#sources-container h2 {
+h2 {
   font-size: 1.2rem;
   color: #555;
   border-bottom: 1px solid #eee;
@@ -62,7 +62,7 @@ main {
   text-decoration: none;
   font-weight: 500;
   display: block;
-  transition: background-color 0.2s ease-in-out;
+  /* transition: background-color 0.2s ease-in-out; */
   padding: 0.5rem;
   border-radius: 4px;
 }
