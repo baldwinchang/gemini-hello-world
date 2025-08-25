@@ -195,4 +195,41 @@ The search term:`,
   }
 }
 
-await main(`$googl`);
+function initializeApp() {
+  const searchForm = document.getElementById('search-form') as HTMLFormElement;
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const searchButton = document.getElementById('search-button') as HTMLButtonElement;
+
+  if (!searchForm || !searchInput || !searchButton) {
+    console.error('Required DOM elements for search not found.');
+    return;
+  }
+
+  searchForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const prompt = searchInput.value.trim();
+    if (!prompt) {
+      return;
+    }
+
+    // Disable form elements
+    searchInput.disabled = true;
+    searchButton.disabled = true;
+    searchButton.textContent = 'Searching...';
+
+    try {
+      await main(prompt);
+    } catch (error) {
+      // The main function already handles displaying an error message.
+      // We just log it here for debugging.
+      console.error('An error occurred during the search operation:', error);
+    } finally {
+      // Re-enable form elements
+      searchInput.disabled = false;
+      searchButton.disabled = false;
+      searchButton.textContent = 'Search';
+    }
+  });
+}
+
+initializeApp();
